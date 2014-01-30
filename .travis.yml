@@ -4,6 +4,10 @@ python:
 services:
   - memcached
 env: DJANGO_SETTINGS_MODULE=esp.settings
+cache:
+  apt: true
+  directories:
+    - /home/travis/virtualenv/python2.7/lib/python2.7/site-packages
 before_install:
   - sudo apt-get update
 install: 
