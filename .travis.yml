@@ -20,3 +20,5 @@ script:
   - cd esp
   - ./manage.py collectstatic --noinput -v 0
   - ./manage.py test
+after_success:
+  - coveralls

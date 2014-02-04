@@ -17,6 +17,7 @@ pycurl==7.19.0
 pydns==2.3.6
 pylibmc==1.2.3
 pyprof2calltree==1.1.0
+python-coveralls
 python-dateutil==2.1
 python-memcached==1.53
 pytz==2013b
