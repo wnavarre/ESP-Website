@@ -19,6 +19,6 @@ before_script:
 script: 
   - cd esp
   - ./manage.py collectstatic --noinput -v 0
-  - ./manage.py test
+  - coverage run --source=. ./manage.py test
 after_success:
   - coveralls
