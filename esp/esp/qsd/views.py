@@ -223,7 +223,7 @@ def ajax_qsd(request):
             purge_page(qsd.url+".html")
 
         result['status'] = 1
-        result['content'] = markdown(qsd.content)
+        result['content'] = qsd.html()
         result['url'] = qsd.url
 
     return HttpResponse(simplejson.dumps(result))

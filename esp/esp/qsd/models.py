@@ -159,7 +159,7 @@ class QuasiStaticData(models.Model):
 
     @cache_function
     def html(self):
-        return markdown(self.content)
+        return markdown(self.content, extensions=['extra'])
     html.depend_on_row(lambda:QuasiStaticData, 'self')
 
     @staticmethod
