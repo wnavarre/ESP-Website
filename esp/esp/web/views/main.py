@@ -336,7 +336,19 @@ def registration_redirect(request):
     ctxt['userrole'] = userrole
 
     if regperm:
-        progs_deadline = list(Permission.program_by_perm(user,regperm))
+        # temporary change for debugging purposes
+        # lua 2013/11/6
+        qs = Permission.program_by_perm(user,regperm)
+        from django.db import DatabaseError
+        try:
+            progs_deadline = list(qs)
+        except DatabaseError:
+            query = str(qs.query)
+            app_label = Permission._meta.app_label
+            db_table = Permission._meta.db_table
+            e = qs.exists()
+            c = qs.count()
+            raise
     else:
         progs_deadline = []
 
