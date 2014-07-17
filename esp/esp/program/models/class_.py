@@ -83,24 +83,25 @@ from esp.customforms.linkfields import CustomFormsLinkModel
 
 __all__ = ['ClassSection', 'ClassSubject', 'ProgramCheckItem', 'ClassManager', 'ClassCategories', 'ClassImplication', 'ClassSizeRange']
 
-CANCELLED = -20
-REJECTED = -10
-UNREVIEWED = 0
-HIDDEN = 5
-ACCEPTED = 10
+class ClassStatus(object):
+    CANCELLED = -20
+    REJECTED = -10
+    UNREVIEWED = 0
+    HIDDEN = 5
+    ACCEPTED = 10
 
-STATUS_CHOICES = (
-        (CANCELLED, "cancelled"),
-        (REJECTED, "rejected"),
-        (UNREVIEWED, "unreviewed"),
-        (HIDDEN, "accepted but hidden"),
-        (ACCEPTED, "accepted"),
-        )
+    STATUS_CHOICES = (
+            (CANCELLED, "cancelled"),
+            (REJECTED, "rejected"),
+            (UNREVIEWED, "unreviewed"),
+            (HIDDEN, "accepted but hidden"),
+            (ACCEPTED, "accepted"),
+            )
 
-OPEN = 0
-CLOSED = 10
+    OPEN = 0
+    CLOSED = 10
 
-REGISTRATION_CHOICES = (
+    REGISTRATION_CHOICES = (
             (OPEN, "open"),
             (CLOSED, "closed"),
             )
@@ -168,9 +169,9 @@ class ClassManager(ProcedureManager):
     
     def approved(self, return_q_obj=False):
         if return_q_obj:
-            return Q(status = ACCEPTED)
+            return Q(status = ClassStatus.ACCEPTED)
         
-        return self.filter(status = ACCEPTED)
+        return self.filter(status = ClassStatus.ACCEPTED)
 
     def catalog(self, program, ts=None, force_all=False, initial_queryset=None, use_cache=True, cache_only=False, order_args_override=None):
         # Try getting the catalog straight from cache
@@ -290,7 +291,7 @@ class ClassManager(ProcedureManager):
             teachers = ESPUser.objects.filter(classsubject__isnull=False)
 
         teachers_by_id = {}
-        for t in teachers: 
+        for t in teachers:
             teachers_by_id[t.id] = t
 
         # Now, to combine all of the above
@@ -332,9 +333,9 @@ class ClassSection(models.Model):
     
     anchor = AjaxForeignKey(DataTree, blank=True, null=True)
 
-    status = models.IntegerField(choices=STATUS_CHOICES, default=UNREVIEWED)                 #As the choices are shared with ClassSubject, they're at the top of the file
+    status = models.IntegerField(choices=ClassStatus.STATUS_CHOICES, default=ClassStatus.UNREVIEWED)                 #As the choices are shared with ClassSubject, they're at the top of the file
 
-    registration_status = models.IntegerField(choices=REGISTRATION_CHOICES, default=OPEN)    #Ditto.
+    registration_status = models.IntegerField(choices=ClassStatus.REGISTRATION_CHOICES, default=ClassStatus.OPEN)    #Ditto.
     duration = models.DecimalField(blank=True, null=True, max_digits=5, decimal_places=2)
     meeting_times = models.ManyToManyField(Event, related_name='meeting_times', blank=True)
     checklist_progress = models.ManyToManyField(ProgramCheckItem, blank=True)
@@ -1162,13 +1163,13 @@ class ClassSection(models.Model):
     def friendly_times_with_date(self, raw=False):
         return self.friendly_times(raw=raw, include_date=True)
     
-    def isAccepted(self): return self.status == ACCEPTED
-    def isReviewed(self): return self.status != UNREVIEWED
-    def isRejected(self): return self.status == REJECTED
-    def isCancelled(self): return self.status == CANCELLED
+    def isAccepted(self): return self.status == ClassStatus.ACCEPTED
+    def isReviewed(self): return self.status != ClassStatus.UNREVIEWED
+    def isRejected(self): return self.status == ClassStatus.REJECTED
+    def isCancelled(self): return self.status == ClassStatus.CANCELLED
     isCanceled = isCancelled
-    def isRegOpen(self): return self.registration_status == OPEN
-    def isRegClosed(self): return self.registration_status == CLOSED
+    def isRegOpen(self): return self.registration_status == ClassStatus.OPEN
+    def isRegClosed(self): return self.registration_status == ClassStatus.CLOSED
     def isFullOrClosed(self): return self.isFull() or self.isRegClosed()
 
     def getRegistrations(self, user = None):
@@ -1334,7 +1335,7 @@ class ClassSubject(models.Model, CustomFormsLinkModel):
 
     #   Backwards compatibility with Class database format.
     #   Please don't use. :)
-    status = models.IntegerField(choices = STATUS_CHOICES, default=UNREVIEWED)
+    status = models.IntegerField(choices = ClassStatus.STATUS_CHOICES, default=ClassStatus.UNREVIEWED)
     duration = models.DecimalField(blank=True, null=True, max_digits=5, decimal_places=2)
     meeting_times = models.ManyToManyField(Event, blank=True)
     
@@ -1460,7 +1461,7 @@ class ClassSubject(models.Model, CustomFormsLinkModel):
         
         return new_section
 
-    def add_default_section(self, duration=0.0, status=UNREVIEWED):
+    def add_default_section(self, duration=0.0, status=ClassStatus.UNREVIEWED):
         """ Make sure this class has a section associated with it.  This should be called
         at least once on every class.  Afterwards, additional sections can be created using
         add_section. """
@@ -1739,10 +1740,10 @@ class ClassSubject(models.Model, CustomFormsLinkModel):
             
         return False
 
-    def isAccepted(self): return self.status > 0
-    def isReviewed(self): return self.status != UNREVIEWED
-    def isRejected(self): return self.status == REJECTED
-    def isCancelled(self): return self.status == CANCELLED
+    def isAccepted(self): return self.status > ClassStatus.UNREVIEWED
+    def isReviewed(self): return self.status != ClassStatus.UNREVIEWED
+    def isRejected(self): return self.status == ClassStatus.REJECTED
+    def isCancelled(self): return self.status == ClassStatus.CANCELLED
     isCanceled = isCancelled    # Yay alternative spellings
     
     def isRegOpen(self):
@@ -1768,15 +1769,15 @@ class ClassSubject(models.Model, CustomFormsLinkModel):
         if self.isAccepted():
             return False # already accepted
 
-        self.status = ACCEPTED
+        self.status = ClassStatus.ACCEPTED
         # I do not understand the following line, but it saves us from "Cannot convert float to Decimal".
         # Also seen in /esp/program/modules/forms/management.py -ageng 2008-11-01
         #self.duration = Decimal(str(self.duration))
         self.save()
         #   Accept any unreviewed sections.
         for sec in self.sections.all():
-            if sec.status == UNREVIEWED:
-                sec.status = ACCEPTED
+            if sec.status == ClassStatus.UNREVIEWED:
+                sec.status = ClassStatus.ACCEPTED
                 sec.save()
 
         if not show_message:
@@ -1796,23 +1797,23 @@ was approved! Please go to http://esp.mit.edu/teach/%s/class_status/%s to view y
 
     def propose(self):
         """ Mark this class as just `proposed' """
-        self.status = UNREVIEWED
+        self.status = ClassStatus.UNREVIEWED
         self.save()
 
     def reject(self):
         """ Mark this class as rejected; also kicks out students from each section. """
         for sec in self.sections.all():
-            sec.status = REJECTED
+            sec.status = ClassStatus.REJECTED
             sec.save()
         self.clearStudents()
-        self.status = REJECTED
+        self.status = ClassStatus.REJECTED
         self.save()
 
     def cancel(self, email_students=True, include_lottery_students=False, explanation=None, unschedule=False):
         """ Cancel this class by cancelling all of its sections. """
         for sec in self.sections.all():
             sec.cancel(email_students, include_lottery_students, explanation, unschedule)
-        self.status = CANCELLED
+        self.status = ClassStatus.CANCELLED
         self.save()
         
     def clearStudents(self):
@@ -1980,11 +1981,11 @@ was approved! Please go to http://esp.mit.edu/teach/%s/class_status/%s to view y
 
     def save(self, *args, **kwargs):
         super(ClassSubject, self).save(*args, **kwargs)
-        if self.status < UNREVIEWED: #ie, all rejected or cancelled classes.
+        if self.status < ClassStatus.UNREVIEWED: #ie, all rejected or cancelled classes.
             # Punt teachers all of whose classes have been rejected, from the programwide teachers mailing list
             teachers = self.get_teachers()
             for t in teachers:
-                if ESPUser(t).getTaughtClasses(self.parent_program).filter(status__gte=10).count() == 0:
+                if ESPUser(t).getTaughtClasses(self.parent_program).filter(status__gte=ClassStatus.ACCEPTED).count() == 0:
                     from esp.mailman import remove_list_member
                     mailing_list_name = "%s_%s" % (self.parent_program.program_type, self.parent_program.program_instance)
                     teachers_list_name = "%s-%s" % (mailing_list_name, "teachers")
