@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'esp.settings'
 
-import esp.manage
+import manage
 from esp.users.models import ESPUser
 
 import socket
