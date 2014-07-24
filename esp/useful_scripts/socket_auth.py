@@ -54,12 +54,6 @@ def server(socket_path):
             print "Exiting to clean up..."
             sys.exit()
 
-def user_exists(conn, username, *args):
-    if len(ESPUser.objects.filter(username__iexact=username)[:1]) > 0:
-        return_(True, conn=conn,)
-    else:
-        return_(False, conn=conn, )
-
 def authenticate(conn, username, password, *args):
     from django.contrib.auth import authenticate
     print ">> Running (authenticate '%s' '[redacted]')" % (username, )
@@ -74,26 +68,14 @@ def authenticate(conn, username, password, *args):
     else:
         return_(False, conn=conn,)
 
-def check_userbit(conn, username, qnode, vnode, *args):
-    from esp.users.models import UserBit, GetNode
-    print ">> Running (check_userbit '%s' '%s')" % (username, vnode, )
-    user = ESPUser.objects.get(username=username)
-    if UserBit.UserHasPerms(user, GetNode(qnode), GetNode(vnode), recursive_required=True):
-        return_(True, conn=conn, )
-    else:
-        return_(False, conn=conn, )
-
 def finger(conn, username):
-    from esp.users.models import UserBit, GetNode
     print ">> Running (finger '%s')" % (username, )
     user = ESPUser.objects.get(username=username)
     ret = "%s\n%s\n%s" % (user.first_name, user.last_name, user.email, )
     return_(ret, conn=conn, )
 
 funcs = {
-    'USER EXISTS': user_exists,
     'AUTHENTICATE': authenticate,
-    'CHECK USERBIT': check_userbit,
     'FINGER': finger,
 }
 
