@@ -1,5 +1,6 @@
 from esp.program.models import Program, ClassSection, ClassSubject
 from esp.program.modules.base import ProgramModuleObj, needs_admin, main_call, aux_call
+from esp.resources.models import ResourceRequest
 from copy import deepcopy
 from math import ceil
 from esp.cal.models import *
@@ -7,7 +8,9 @@ from datetime import date
 from esp.web.util.main import render_to_response
 from esp.users.models import ESPUser
 from esp.tagdict.models import Tag
+
 import json
+import re
 
 class SchedulingCheckModule(ProgramModuleObj):
 
@@ -189,6 +192,7 @@ class SchedulingCheckRunner:
           'teachers_who_like_running',
           'hungry_teachers',
           'no_overlap_classes',
+          'special_classroom_types',
      ]
 
      #################################################
@@ -525,6 +529,43 @@ class SchedulingCheckRunner:
                  {'headings': ['Comment', 'Timeblock', 'Classes']},
                  help_text="Given a list of classes that should not overlap, compute which overlap.  This is to be used for example for classes using the same materials which are not tracked by the website, or to check that directors' classes don't overlap.  The classes should be put in the Tag no_overlap_classes, in the format of a dictionary with keys various comments (e.g. 'classes using the Quiz Bowl buzzers') and values as corresponding lists of class IDs."
                  )
-                     
 
+     def special_classroom_types(self):
+         """
+         Check special classrooms types (music, computer, kitchen).
 
+         Configuration Tag: special_classroom_types, a dictionary mapping
+         resource request type desired_value regexes to a list of classrooms (by
+         resource ID). Any classroom whose name matches the regex will
+         automatically be included.
+         """
+         DEFAULT_CONFIG = {r'^.*(computer|cluster).*$': [],
+                           r'^.*music.*$': [],
+                           r'^.*kitchen.*$': []}
+         config = json.loads(Tag.getProgramTag('special_classroom_types',
+                                               program=self.p,
+                                               default='{}'))
+         config = config if config else DEFAULT_CONFIG
+
+         HEADINGS = ["Class Section", "Unfulfilled Request", "Current Room"]
+         mismatches = []
+
+         for type_regex, matching_rooms in DEFAULT_CONFIG.iteritems():
+             resource_requests = ResourceRequest.objects.filter(
+                 res_type__program=self.p, desired_value__iregex=type_regex)
+
+             for rr in resource_requests:
+                 if all(room.id in matching_rooms or
+                        re.match(type_regex, room.name, re.IGNORECASE)
+                        for room in rr.target.classrooms()):
+                     continue
+
+                 mismatches.append({
+                         HEADINGS[0]: rr.target,
+                         HEADINGS[1]: rr.desired_value,
+                         HEADINGS[2]: rr.target.classrooms()[0].name
+                         })
+
+         return self.formatter.format_table(mismatches, "Special Classroom Types",
+                                            {'headings': HEADINGS},
+                                            help_text=self.special_classroom_types.__doc__)
