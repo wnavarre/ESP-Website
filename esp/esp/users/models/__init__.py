@@ -261,7 +261,7 @@ class ESPUser(User, AnonymousUser):
         return self.__olduser
 
     def name(self):
-        return '%s %s' % (self.first_name, self.last_name)
+        return u'%s %s' % (self.first_name, self.last_name)
 
     def get_email_sendto_address_pair(self):
         """
@@ -387,7 +387,7 @@ class ESPUser(User, AnonymousUser):
                          (settings.DEFAULT_HOST, otheruser.password)
         elif key == 'recover_query':
             return "?code=%s" % otheruser.password
-        return ''
+        return u''
 
     def getTaughtPrograms(self):
         taught_programs = Program.objects.filter(classsubject__teachers=self)
@@ -1325,7 +1325,7 @@ class StudentInfo(models.Model):
         username = "N/A"
         if self.user != None:
             username = self.user.username
-        return 'ESP Student Info (%s) -- %s' % (username, unicode(self.school))
+        return u'ESP Student Info (%s) -- %s' % (username, unicode(self.school))
 
 class TeacherInfo(models.Model, CustomFormsLinkModel):
     """ ESP Teacher-specific contact information """
@@ -1445,7 +1445,7 @@ class TeacherInfo(models.Model, CustomFormsLinkModel):
         username = ""
         if self.user != None:
             username = self.user.username
-        return 'ESP Teacher Info (%s)' % username
+        return u'ESP Teacher Info (%s)' % username
 
     class Meta:
         app_label = 'users'
@@ -1506,7 +1506,7 @@ class GuardianInfo(models.Model):
         username = ""
         if self.user != None:
             username = self.user.username
-        return 'ESP Guardian Info (%s)' % username
+        return u'ESP Guardian Info (%s)' % username
 
 
 class EducatorInfo(models.Model):
@@ -1571,7 +1571,7 @@ class EducatorInfo(models.Model):
         username = ""
         if self.user != None:
             username = self.user.username
-        return 'ESP Educator Info (%s)' % username
+        return u'ESP Educator Info (%s)' % username
 
 class ZipCode(models.Model):
     """ Zip Code information """
@@ -1637,7 +1637,7 @@ class ZipCode(models.Model):
         return winners
 
     def __unicode__(self):
-        return '%s (%s, %s)' % (self.zip_code,
+        return u'%s (%s, %s)' % (self.zip_code,
                                 self.longitude,
                                 self.latitude)
 
@@ -1653,7 +1653,7 @@ class ZipCodeSearches(models.Model):
         db_table = 'users_zipcodesearches'
 
     def __unicode__(self):
-        return '%s Zip Codes that are less than %s miles from %s' % \
+        return u'%s Zip Codes that are less than %s miles from %s' % \
                (len(self.zipcodes.split(',')), self.distance, self.zip_code)
 
 class ContactInfo(models.Model, CustomFormsLinkModel):
@@ -1721,7 +1721,7 @@ class ContactInfo(models.Model, CustomFormsLinkModel):
 
 
     def name(self):
-        return '%s %s' % (self.first_name, self.last_name)
+        return u'%s %s' % (self.first_name, self.last_name)
 
     email = property(lambda self: self.e_mail)
 
@@ -1738,7 +1738,7 @@ class ContactInfo(models.Model, CustomFormsLinkModel):
         return ESPUser.email_sendto_address(self.email, self.name())
 
     def address(self):
-        return '%s, %s, %s %s' % \
+        return u'%s, %s, %s %s' % \
             (self.address_street,
              self.address_city,
              self.address_state,
@@ -1861,10 +1861,10 @@ class K12School(models.Model):
 
     def __unicode__(self):
         if self.contact_id:
-            return '%s in %s, %s' % (self.name, self.contact.address_city,
+            return u'%s in %s, %s' % (self.name, self.contact.address_city,
                                        self.contact.address_state)
         else:
-            return '%s' % self.name
+            return u'%s' % self.name
 
     @classmethod
     def choicelist(cls, other_help_text=''):
