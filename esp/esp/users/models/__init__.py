@@ -832,6 +832,31 @@ class ESPUser(User, AnonymousUser):
         ).exists()
     isAdmin = isAdministrator
 
+    @classmethod
+    def administrators(cls, program=None, QObject=False):
+        """Admins for the program.
+
+        :param program:
+            Find admins for this program.
+            If None, check for global admin privileges.
+        :type program:
+            `Program` or None
+        :param QObject:
+            If True, return a `Q` object.
+            If False, return a `QuerySet`.
+        :type QObject:
+            `bool`
+        :return:
+            Set of admins.
+        :rtype:
+            `Q` or `QuerySet`
+        """
+        return Permission.users_with_perm(
+            "Administer",
+            program=program,
+            QObject=QObject,
+        )
+
     @cache_function
     def getAllUserTypes(use_tag=True):
         """
@@ -2324,6 +2349,94 @@ class Permission(ExpirableModel):
 
     class Meta:
         app_label = 'users'
+
+    @classmethod
+    def users_with_perm(cls, name, program=None, when=None, program_is_none_implies_all=False, QObject=False):
+        """Users that have the specified permission on the program.
+
+        :param name:
+            The unique identifier of the permission identifier to check for.
+            Must be in PERMISSION_CHOICES_FLAT.
+        :type name:
+            `str`
+        :param program:
+            Check for permission for `name` on this program.
+            If program is None, check only for Permission objects with
+            program=None.
+            If program_is_none_implies_all is False, check only for Permission
+            objects with program=program.
+            If program_is_none_implies_all is True, check for Permission
+            objects with program=program or program=None.
+        :type program:
+            `Program` or None
+        :param when:
+            Check permissions as of this point in time.
+            If None, default to datetime.datetime.now().
+        :type when:
+            `datetime.datetime` or None
+        :param program_is_none_implies_all:
+            If True, treat Permission objects with program=None as if they are
+            global across all programs. Return True if the user has a
+            Permission object with program=program or with program=None.
+            If False, do not treat Permission objects with program=None as if
+            they are global across all programs. Only return True if the user
+            has a Permission object with program=program.
+            The default behavior is that permissions are not globally
+            applicable. Only special permissions that are not in
+            deadline_types, like Administer and Onsite, can be granted
+            globally on all programs. When checking for these special
+            permissions, callers should pass True for this param.
+            If name is in deadline_types, set this param to False,
+            regardless of the original value.
+        :type program_is_none_implies_all:
+            `bool`
+        :param QObject:
+            If True, return a `Q` object.
+            If False, return a `QuerySet`.
+        :type QObject:
+            `bool`
+        :return:
+            Users that have the specified permission on the program.
+            For database performance reasons, when a `Q` object is returned,
+            the query is represented as a filter on user ids. The true query
+            would have too many inefficient JOINs.
+        :rtype:
+            `Q` or `QuerySet`
+        """
+        # This is the only explicit check for admin privileges (which confer
+        # all permissions) that is needed. The other checks are handled via
+        # implications ("Administer" implies all other permissions).
+        admin_group = Group.objects.filter(name="Administrator")
+        admins = admin_group.values_list('user', flat=True).distinct()
+        qadmins = Q(id__in=admins)
+
+        if name in cls.deadline_types:
+            program_is_none_implies_all = False
+        perms=[name, "Administer"]
+        for k,v in cls.implications.items():
+            if name in v: perms.append(k)
+
+        qusers = qadmins
+        for perm in perms:
+            qprogram = Q(program=program)
+            if program_is_none_implies_all or (perm == "Administer"):
+                qprogram |= Q(program=None)
+            initial_qset = cls.objects.filter(qprogram).filter(permission_type=perm)
+            initial_qset = initial_qset.filter(cls.is_valid_qobject(when=when))
+
+            # Users can be directly associated with a Permission.
+            perm_via_user = initial_qset.values_list('user', flat=True)
+            qperm_via_user = Q(id__in=perm_via_user.distinct())
+
+            # Users can be associated with a Permission via a Group.
+            perm_via_group = initial_qset.values_list('role__user', flat=True)
+            qperm_via_group = Q(id__in=perm_via_group.distinct())
+            qusers = qusers | qperm_via_user | qperm_via_group
+
+        if QObject:
+            return qusers
+        else:
+            return ESPUser.objects.filter(qusers).distinct()
 
     @classmethod
     def user_has_perm(cls, user, name, program=None, when=None, program_is_none_implies_all=False):
