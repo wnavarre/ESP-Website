@@ -40,7 +40,7 @@ import random
 import simplejson as json
 
 from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth.models import User, AnonymousUser, Group
 from django.contrib.contenttypes import generic
 from django.contrib.localflavor.us.models import PhoneNumberField
 from django.core import urlresolvers
@@ -58,7 +58,7 @@ from esp.datatree.models import *
 from esp.db.fields import AjaxForeignKey
 from esp.middleware import ESPError, AjaxError
 from esp.tagdict.models import Tag
-from esp.users.models import ContactInfo, StudentInfo, TeacherInfo, EducatorInfo, GuardianInfo, ESPUser, shirt_sizes, shirt_types, Record
+from esp.users.models import ContactInfo, StudentInfo, TeacherInfo, EducatorInfo, GuardianInfo, ESPUser, shirt_sizes, shirt_types, Record, Permission
 from esp.utils.expirable_model import ExpirableModel
 from esp.utils.formats import format_lazy
 from esp.qsdmedia.models import Media
@@ -565,24 +565,48 @@ class Program(models.Model, CustomFormsLinkModel):
             return ESPUser.objects.filter(union).distinct()
 
     @cache_function
-    def isFull(self):
-        """ Can this program accept any more students? """
+    def get_admins(self):
+        return ESPUser.administrators(self, QObject=False)
+    get_admins.depend_on_model(lambda: ESPUser)
+    get_admins.depend_on_model(lambda: Permission)
+    get_admins.depend_on_model(lambda: Group)
+
+    @cache_function
+    def remaining_space(self):
+        """Number of new students that can reg before program fills."""
 
         # Some programs don't have caps; this is represented with program_size_max in [ 0, None ]
         if self.program_size_max is None or self.program_size_max == 0:
-            return False
+            return float('inf')
 
         students_dict = self.students(QObjects = True)
         if students_dict.has_key('classreg'):
-            students_count = ESPUser.objects.filter(students_dict['classreg']).distinct().count()
+            student_ids = set(ESPUser.objects.filter(students_dict['classreg']).values_list('id', flat=True).distinct())
+            students_count = len(student_ids)
+
+            # Assume override_full students have registered already.
+            students_count -= ESPUser.objects.filter(students_dict['override_full']).distinct().count()
+
+            admin_ids = set(self.get_admins().values_list('id', flat=True).distinct())
+            students_count -= len(filter(lambda admin: admin in student_ids, admin_ids))
+            # TODO(jmoldow): If we ever implement test accounts, filter them
+            # out here.
         else:
             students_count = ESPUser.objects.filter(record__event="reg_confirmed",record__program=self).distinct().count()
 
-        isfull = ( students_count >= self.program_size_max )
+        return max(0, (self.program_size_max - students_count))
+    remaining_space.depend_on_cache(lambda: ClassSection.num_students, lambda self=wildcard, **kwargs: {'self': self.parent_class.parent_program})
+    remaining_space.depend_on_row(lambda: Program, lambda prog: {'self': prog})
+    remaining_space.depend_on_model(lambda: Permission)
+    remaining_space.depend_on_row(lambda: Record, lambda rec: {}, lambda rec: rec.event == "reg_confirmed") #i'm not sure why the selector is empty, that's how it was for the confirmation dependency when it was a userbit
 
-        return isfull
+    @cache_function
+    def isFull(self):
+        """ Can this program accept any more students? """
+        return self.remaining_space() <= 0
     isFull.depend_on_cache(lambda: ClassSection.num_students, lambda self=wildcard, **kwargs: {'self': self.parent_class.parent_program})
     isFull.depend_on_row(lambda: Program, lambda prog: {'self': prog})
+    isFull.depend_on_model(lambda: Permission)
     isFull.depend_on_row(lambda: Record, lambda rec: {}, lambda rec: rec.event == "reg_confirmed") #i'm not sure why the selector is empty, that's how it was for the confirmation dependency when it was a userbit
 
     OVERRIDE_FULL_PERM = 'OverrideFull'
