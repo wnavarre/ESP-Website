@@ -203,6 +203,12 @@ class ProgramModuleObj(models.Model):
     def findModule(request, tl, one, two, call_txt, extra, prog):
         moduleobj = ProgramModuleObj.findModuleObject(tl, call_txt, prog)
 
+        user = ESPUser(request.user)
+        # Only do fullness checks for certain modules. May be incorrect and/or unperformant.
+        if (tl == "learn") and (isinstance(moduleobj, CoreModule) or (call_txt in ['profile', 'studentreg', 'lotterystudentreg', 'studentreg2phase'])):
+            if prog.isFull() and not user.canRegToFullProgram(prog) and not prog.isConfirmed(user):
+                raise ESPError("This program has filled!  It can't accept any more students.  Please try again next session.", log=False)
+
         #   If a "core" module has been found:
         #   Put the user through a sequence of all required modules in the same category.
         #   Only do so if we've not blocked this behavior, though
