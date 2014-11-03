@@ -531,7 +531,6 @@ class ArgCache(WithDelayableMethods):
         add_lazy_dependency(self, cache_obj, resolve_depend_on_cache)
     depend_on_cache.alters_data = True
 
-    @delay_method
     def depend_on_m2m(self, Model, m2m_field, add_func, rem_func=None, filter=None):
         """
         Depend on an m2m relation, field m2m_field of model Model, using
