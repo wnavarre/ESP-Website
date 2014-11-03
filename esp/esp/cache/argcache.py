@@ -33,8 +33,6 @@ Learning Unlimited, Inc.
   Email: web-team@learningu.org
 """
 
-import types
-
 from django.core.cache import cache
 from django.dispatch import Signal
 from django.db.models import signals

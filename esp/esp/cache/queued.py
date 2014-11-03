@@ -1,5 +1,7 @@
 """ General object with queuable actions. """
 
+import types
+
 def delay_method(func):
     def add_to_queue(self, *args, **kwargs):
         self._methods_queue.append( (func, args, kwargs) )
