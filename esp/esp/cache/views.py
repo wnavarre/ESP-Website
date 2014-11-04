@@ -41,7 +41,9 @@ from django.http import HttpResponse
 
 @admin_required
 def view_all(request):
-    caches = sorted(all_caches.values(), key=lambda c: c.name)
+    # minor local change, will make it into one of my argcache pull
+    # requests later in some form. --lua
+    caches = sorted(all_caches, key=lambda c: c.name)
     cache_data = [{'pretty_name': cache.pretty_name, 'hit_count': cache.hit_count, 'miss_count': cache.miss_count} for cache in caches]
     return render_to_response('cache/view_all.html', request, {'caches': cache_data})
 
