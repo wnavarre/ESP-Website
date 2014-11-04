@@ -84,12 +84,12 @@ class BigBoardModule(ProgramModuleObj):
         return render_to_response(self.baseDir()+'bigboard.html',
                                   request, context)
 
-    # Numbers computed for the big board are below.  They're cached for 105
+    # Numbers computed for the big board are below.  They're cached for 285
     # seconds, which is long enough that they hopefully won't get recomputed a
     # bunch if multiple admins are loading the page, but short enough that each
     # time the page refreshes for the same admin, they will get new numbers
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_users_enrolled(self, prog):
         # Querying for SRs and then extracting the users saves us joining the
         # users table.
@@ -98,7 +98,7 @@ class BigBoardModule(ProgramModuleObj):
             relationship__name='Enrolled'
         ).values_list('user').distinct().count()
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_users_with_lottery(self, prog):
         # Past empirical observation has shown that doing the union in SQL is
         # much, much slower for unknown reasons; it also means we would have to
@@ -116,7 +116,7 @@ class BigBoardModule(ProgramModuleObj):
             .values_list('user').distinct())
         return len(users_with_ssis | users_with_srs)
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_active_users(self, prog, minutes=10):
         recent = datetime.datetime.now() - datetime.timedelta(0, minutes * 60)
         users_with_ssis = set(
@@ -136,29 +136,29 @@ class BigBoardModule(ProgramModuleObj):
             .values_list('user').distinct())
         return len(users_with_ssis | users_with_srs | users_with_meds)
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_ssis(self, prog):
         return StudentSubjectInterest.valid_objects().filter(
             subject__parent_program=prog).count()
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_priority1s(self, prog):
         return StudentRegistration.valid_objects().filter(
             relationship__name='Priority/1',
             section__parent_class__parent_program=prog).count()
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_prefs(self, prog):
         num_srs = StudentRegistration.valid_objects().filter(
             section__parent_class__parent_program=prog).count()
         return num_srs + self.num_ssis(prog)
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def num_medical(self, prog):
         return Record.objects.filter(program=prog,
                                      event__in=['med', 'med_bypass']).count()
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def popular_classes(self, prog, num=5):
         classes = ClassSubject.objects.filter(
             parent_program=prog).exclude(category__category='Lunch')
@@ -210,7 +210,7 @@ class BigBoardModule(ProgramModuleObj):
             popular_classes.append((description, list(qs)))
         return popular_classes
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def times_medical(self, prog):
         return list(
             Record.objects
@@ -218,7 +218,7 @@ class BigBoardModule(ProgramModuleObj):
             .values('user').annotate(Min('time'))
             .order_by('time__min').values_list('time__min', flat=True))
 
-    @cache_function_for(105)
+    @cache_function_for(285)
     def times_classes(self, prog):
         ssi_times_dict = dict(
             StudentSubjectInterest.objects.filter(subject__parent_program=prog)
