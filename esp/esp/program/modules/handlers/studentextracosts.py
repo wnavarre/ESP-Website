@@ -95,7 +95,7 @@ class StudentExtraCosts(ProgramModuleObj):
         """ Return a description for each line item type that students can be filtered by. """
         student_desc = {}
         pac = ProgramAccountingController(self.program)
-        for i in pac.get_lineitemtypes(optional_only=True):
+        for i in pac.get_lineitemtypes():
             student_desc['extracosts_%d' % i.id] = """Students who have opted for '%s'""" % i.text
 
         return student_desc
@@ -107,7 +107,7 @@ class StudentExtraCosts(ProgramModuleObj):
         pac = ProgramAccountingController(self.program)
         
         # Get all the line item types for this program.
-        for i in pac.get_lineitemtypes(optional_only=True):
+        for i in pac.get_lineitemtypes():
             if QObject:
                 student_lists['extracosts_%d' % i.id] = self.getQForUser(Q(transfer__line_item = i))
             else:
@@ -133,9 +133,9 @@ class StudentExtraCosts(ProgramModuleObj):
 
         #   Determine which line item types we will be asking about
         iac = IndividualAccountingController(self.program, get_current_request().user)
-        costs_list = iac.get_lineitemtypes(optional_only=True).filter(max_quantity__lte=1, lineitemoptions__isnull=True)
-        multicosts_list = iac.get_lineitemtypes(optional_only=True).filter(max_quantity__gt=1, lineitemoptions__isnull=True)
-        multiselect_list = iac.get_lineitemtypes(optional_only=True).filter(lineitemoptions__isnull=False)
+        costs_list = iac.get_lineitemtypes().filter(max_quantity__lte=1, lineitemoptions__isnull=True)
+        multicosts_list = iac.get_lineitemtypes().filter(max_quantity__gt=1, lineitemoptions__isnull=True)
+        multiselect_list = iac.get_lineitemtypes().filter(lineitemoptions__isnull=False)
 
         #   Fetch the user's current preferences
         prefs = iac.get_preferences()
@@ -206,7 +206,7 @@ class StudentExtraCosts(ProgramModuleObj):
             ### End Post
 
         count_map = {}
-        for lineitem_type in iac.get_lineitemtypes(optional_only=True):
+        for lineitem_type in iac.get_lineitemtypes():
             count_map[lineitem_type.text] = [lineitem_type.id, 0, None, None]
 
         for item in iac.get_preferences():
@@ -248,6 +248,8 @@ class StudentExtraCosts(ProgramModuleObj):
         ]
 
         forms = cost_items + multi_cost_items + multiselect_costitems
+
+        print 'FORMS:', len(forms)
 
         return render_to_response(self.baseDir()+'extracosts.html',
                                   request,

@@ -45,25 +45,13 @@ td>ul { list-style-type: none; padding: 0px }
     <th class="small">Item</th>
     <th class="small">Cost Each</th>
 </tr>
+
 {% for f in forms %}
 <tr style="border-bottom: 1px dashed grey;">
     <td width="120px">
         {% if f.form.option %}{{ f.form.option }}{% else %}{{ f.form.cost }}{% endif %}
         {% if f.LineItem.negative_amount %}
             <i>${{ f.LineItem.negative_amount|floatformat:2 }}</i>
-            {% endif %}
-
-        {# If num_options, radio buttons will be used for the field. In order to  #}
-        {# be able to remove a selected item, we need a button. The Javascript    #}
-        {# code for the button is at the bottom.                                  #}
-
-        {% if f.LineItem.num_options %}
-            <button type="button"
-                    class="remove-item"
-                    name="{{ f.form.prefix }}-option"
-                    onclick="remove_item(this);">
-                Remove this item
-            </button>
         {% endif %}
     </td>
 {% if select_qty %}    <td>{{ f.form.count }}</td>{% endif %}
