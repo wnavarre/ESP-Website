@@ -314,6 +314,9 @@ DATABASE_NAME = '$DBNAME'
 DATABASE_HOST = 'localhost'
 DATABASE_PORT = '5432'
 
+VARNISH_HOST = 'localhost'
+VARNISH_PORT = '80'
+
 from database_settings import *
 
 MIDDLEWARE_LOCAL = []
@@ -342,6 +345,13 @@ EOF
 
 fi
 
+ln -s $MEDIADIR/default_images $MEDIADIR/images/
+ln -s $MEDIADIR/default_styles $MEDIADIR/styles/
+
+mkdir $MEDIADIR/uploaded
+chmod -R 777 $MEDIADIR
+echo "Default images and styles have been symlinked."
+
 # Database setup
 # To reset: remove user and DB in SQL
 if [[ "$MODE_DB" || "$MODE_ALL" ]]
@@ -354,9 +364,10 @@ then
     echo "Django's manage.py scripts will now be used to initialize the"
     echo "$DBNAME database.  Please follow their directions."
 
-    cd $BASEDIR/esp/esp
+    cd $BASEDIR/esp
     ./manage.py syncdb
     ./manage.py migrate
+    ./manage.py collectstatic
     cd $CURDIR
     
     #   Set initial Site (used in password recovery e-mail)
@@ -373,7 +384,7 @@ if [[ "$MODE_APACHE" || "$MODE_ALL" ]]
 then
     cat >>$APACHE_CONF_FILE <<EOF
 #   $INSTITUTION $GROUPNAME (automatically generated)
-WSGIDaemonProcess $SITENAME processes=1 threads=1 maximum-requests=1000
+WSGIDaemonProcess $SITENAME processes=2 threads=1 maximum-requests=1000
 <VirtualHost *:80 *:81>
     ServerName $ESPHOSTNAME
     ServerAlias $SITENAME-orig.learningu.org
@@ -384,8 +395,12 @@ WSGIDaemonProcess $SITENAME processes=1 threads=1 maximum-requests=1000
     #   Caching - should use Squid if performance is really important
     # CacheEnable disk /
 
+    #   Redirect HTTP requests to HTTPS for security - uncomment to use
+    # Include /etc/apache2/sites-available/esp_sites/https_redirect.conf
+
     #   Static files
     Alias /media $BASEDIR/esp/public/media
+    Alias /static $BASEDIR/esp/public/static
     <Location /media>
         DAV on
         <LimitExcept GET HEAD OPTIONS PROPFIND>
@@ -432,4 +447,6 @@ echo "  $SITENAME-orig.learningu.org -> $IP_ADDRESS"
 echo "  $SITENAME-backup.learningu.org -> $IP_ADDRESS"
 echo "You may also want to add some template overrides that establish"
 echo "the initial look and feel of the site."
+echo "Please also configure e-mail by adjusting the exim4 configuration as"
+echo "necessary."
 echo
