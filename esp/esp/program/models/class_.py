@@ -436,7 +436,7 @@ class ClassSection(models.Model):
     @cache_function
     def _get_capacity(self, ignore_changes=False):
         ans = None
-        rooms = self.initial_rooms()
+        rooms = self.classrooms().order_by('id')
         if self.max_class_capacity is not None:
             ans = self.max_class_capacity
         else:
