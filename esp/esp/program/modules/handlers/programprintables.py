@@ -682,10 +682,10 @@ class ProgramPrintables(ProgramModuleObj):
                     and cls.isAccepted()                       ]
             # now we sort them by time/title
             classes.sort()            
-            for cls in classes:
-                scheditems.append({'name': teacher.name(),
-                                   'teacher': teacher,
-                                   'cls' : cls})
+            #for cls in classes:
+            scheditems.append({'name': teacher.name(),
+                               'teacher': teacher,
+                               'classes' : classes})
 
         context['scheditems'] = scheditems
 

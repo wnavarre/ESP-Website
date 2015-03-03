@@ -32,12 +32,6 @@ td.newday { border-width: 2px 1px 0 1px;}
 
 {% for scheditem in scheditems %}
 
-{% ifchanged scheditem.teacher.id %}
-{% if not forloop.first %}
-</table>
-<div id="pagebreak">&nbsp;</div>
-{% endif %}
-
 <div class="title">Teacher Schedule for <br /><br />
     <span>{{ scheditem.name }}</span>
 </div>
@@ -46,28 +40,26 @@ td.newday { border-width: 2px 1px 0 1px;}
   If you have any questions, please visit the ESP help desk in the main Lobby.
 </div>
 
-<div style="height: 2in;">&nbsp;</div>
-<br />
-<br />
 <table align="center" cellspacing="0" cellpadding="2px" class="schedule">
 <tr><th colspan="4">Schedule</th></tr>
 <tr>
-{% if scheditem.day %}
-    <th class="day">Day</th>
-{% endif %}
     <th>Time</th>
     <th>Room</th>
     <th>Class</th>
 </tr>
-{% endifchanged %}
+
 {% autoescape off %}
+{% for cls in scheditem.classes %}
 <tr>
-  <td>{{ scheditem.cls.friendly_times|join:"<br />" }}</td>
-  <td>{% if scheditem.cls.classrooms|length_is:0 %}N/A{% else %}
-      {{ scheditem.cls.prettyrooms|join:"<br />" }}{% endif %}</td>
-  <td>{{ scheditem.cls.title }}</td>
+  <td>{{ cls.friendly_times|join:"<br />" }}</td>
+  <td>{% if cls.classrooms|length_is:0 %}N/A{% else %}
+      {{ cls.prettyrooms|join:"<br />" }}{% endif %}</td>
+  <td>{{ cls.title }}</td>
 </tr>
+{% endfor %}
 {% endautoescape %}
+</table>
+<div id="pagebreak">&nbsp;</div>
 {% endfor %}
 
 </body>
