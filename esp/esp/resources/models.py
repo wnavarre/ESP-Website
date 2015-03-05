@@ -187,7 +187,7 @@ class Resource(models.Model):
     user = AjaxForeignKey(ESPUser, null=True, blank=True)
     event = models.ForeignKey(Event)
     student_notes = models.TextField(blank=True,help_text="LaTeX that can be included on student schedules if this is a Classroom-type resource. For example, directions to a tricky room.")
-    teacher_notes = models.TextField(blank=True,help_text="LaTeX that can be included on student schedules if this is a Classroom-type resource. For example, the combo to unlock the classroom.")
+    teacher_notes = models.TextField(blank=True,help_text="HTML that can be included on teacher schedules if this is a Classroom-type resource. For example, the combo to unlock the classroom.")
     
     def __unicode__(self):
         if self.user is not None:

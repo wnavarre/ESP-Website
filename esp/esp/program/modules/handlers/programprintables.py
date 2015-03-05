@@ -675,17 +675,26 @@ class ProgramPrintables(ProgramModuleObj):
 
         for teacher in teachers:
             # get list of valid classes
-            classes = [ cls for cls in teacher.getTaughtSections()
-                    if cls.parent_program == self.program
-                    and cls.meeting_times.all().exists()
-                    and cls.resourceassignment_set.all().exists()
-                    and cls.isAccepted()                       ]
+            classes = []
+            notes = []
+            unsorted_sections = filter(lambda cls: cls.meeting_times.all().exists()\
+                                     and cls.resourceassignment_set.all().exists(),
+                                     teacher.getTaughtSectionsFromProgram(self.program).filter(status=10))
+            sections = sorted(unsorted_sections,key=lambda sec: min(sec.resourceassignment_set.all(),key=lambda r:r.resource.event.start))
+            for cls in sections:
+                classes.append(cls)
+                rset=cls.resourceassignment_set.filter(resource__res_type__name="Classroom").order_by("resource__event__start")
+                for r in rset:
+                    cls_notes = r.resource.teacher_notes
+                    if cls_notes:
+                        notes.append("{0}, {1}: {2}".format(r.resource.event.pretty_time(),r.resource.name,cls_notes))
+                        
             # now we sort them by time/title
             classes.sort()            
-            #for cls in classes:
             scheditems.append({'name': teacher.name(),
                                'teacher': teacher,
-                               'classes' : classes})
+                               'classes' : classes,
+                               'notes' : notes})
 
         context['scheditems'] = scheditems
 

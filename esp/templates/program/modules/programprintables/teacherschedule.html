@@ -59,6 +59,16 @@ td.newday { border-width: 2px 1px 0 1px;}
 {% endfor %}
 {% endautoescape %}
 </table>
+{% if scheditem.notes %}
+{% autoescape off %}
+<br/><b> Notes: </b>
+<ul/>
+{% for note in scheditem.notes %}
+<li>{{ note }}</li>
+{% endfor %}
+{% endautoescape %}
+</ul>
+{% endif %}
 <div id="pagebreak">&nbsp;</div>
 {% endfor %}
 
