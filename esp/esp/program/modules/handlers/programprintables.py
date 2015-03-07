@@ -899,14 +899,22 @@ Volunteer schedule for %s:
         context = {}
  
         scheditems = []
-        
+
         for student in students:
             student.updateOnsite(request)
             # get list of valid classes
+            notes = []
             classes = [ cls for cls in student.getEnrolledSections()
                                 if cls.parent_program == prog and cls.isAccepted() and cls.meeting_times.count() > 0]
             # now we sort them by time/title
             classes.sort()
+            for cls in classes:
+                for r in cls.resourceassignment_set.filter(resource__res_type__name="Classroom").distinct():
+                    res=r.resource
+                    if res.student_notes:
+                        notes.append("{0}, {1}: {2}".format(res.event.pretty_time(),
+                                                            res.name,
+                                                            res.student_notes))
 
             if Tag.getTag('studentschedule_show_empty_blocks', target=prog):
                 #   If you want to show empty blocks, start with a list of blocks instead
@@ -953,6 +961,7 @@ Volunteer schedule for %s:
             student.has_paid = ( student.itemizedcosttotal == 0 )
             student.payment_info = True
             student.classes = classes
+            student.notes = notes
             
         context['students'] = students
         context['program'] = prog

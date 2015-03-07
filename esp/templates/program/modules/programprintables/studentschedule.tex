@@ -67,6 +67,14 @@
 {% endfor %}\hline
 \end{tabularx}
 \end{center}
+{% if student.notes %}
+Notes:
+\begin{itemize}
+{% for note in student.notes %}
+\item {{ note }}
+{% endfor %}
+\end{itemize}
+{% endif %}
 
 
 \begin{center}
