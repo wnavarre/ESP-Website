@@ -909,7 +909,7 @@ Volunteer schedule for %s:
             # now we sort them by time/title
             classes.sort()
             for cls in classes:
-                for r in cls.resourceassignment_set.filter(resource__res_type__name="Classroom").distinct():
+                for r in cls.resourceassignment_set.filter(resource__res_type__name="Classroom"):
                     res=r.resource
                     if res.student_notes:
                         notes.append("{0}, {1}: {2}".format(res.event.pretty_time(),
