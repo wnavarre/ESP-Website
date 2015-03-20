@@ -265,7 +265,7 @@ class StudentRegCore(ProgramModuleObj, CoreModule):
 
             context = module.prepare(context)
         
-        context['canRegToFullProgram'] = request.user.canRegToFullProgram(prog)
+        context['canRegToFullProgram'] = True
                 
         
         context['modules'] = modules

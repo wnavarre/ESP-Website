@@ -729,9 +729,7 @@ class ESPUser(User, AnonymousUser):
         return clsObj.students().filter(id=self.id).exists()
 
     def canRegToFullProgram(self, program):
-        from esp.program.models import Program
-        perm = Program.OVERRIDE_FULL_PERM
-        return Permission.user_has_perm(self, perm, program) or (self in program.students()['student_profile'])
+        return self.registrationprofile_set.filter(program=program, student_info__isnull=False).distinct().exists()
 
     #   This is needed for cache dependencies on financial aid functions
     def get_finaid_model():
