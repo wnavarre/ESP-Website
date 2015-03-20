@@ -584,9 +584,6 @@ class Program(models.Model, CustomFormsLinkModel):
             student_ids = set(ESPUser.objects.filter(students_dict['student_profile']).values_list('id', flat=True).distinct())
             students_count = len(student_ids)
 
-            # Assume override_full students have registered already.
-            students_count -= ESPUser.objects.filter(students_dict['override_full']).distinct().count()
-
             admin_ids = set(self.get_admins().values_list('id', flat=True).distinct())
             students_count -= len(filter(lambda admin: admin in student_ids, admin_ids))
             # TODO(jmoldow): If we ever implement test accounts, filter them
