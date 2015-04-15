@@ -234,9 +234,10 @@ class FormstackStudentProgramAppManager(models.Manager):
 
         # link class subjects
         choices = {}
-        for index, field in enumerate(settings.coreclass_fields.split(',')):
-            value = data_dict.get(int(field))
-            choices[index + 1] = get_subject(value)
+        if len(settings.coreclass_fields) > 0:
+            for index, field in enumerate(settings.coreclass_fields.split(',')):
+                value = data_dict.get(int(field))
+                choices[index + 1] = get_subject(value)
 
         # update app object, or make one if it doesn't exist
         try:
