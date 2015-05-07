@@ -70,7 +70,9 @@ def setup_furnishings(restype_list):
     return ((str(r.id), r.name) for r in restype_list) 
     
 def setup_timeslots(program):
-    return ((str(e.id), e.short_description) for e in program.getTimeSlots())
+    event_types = [EventType.get_from_desc('Class Time Block'),
+                   EventType.get_from_desc('Open Class Time Block')]
+    return ((str(e.id), e.short_description) for e in program.getTimeSlots(types=event_types))
        
        
 class EquipmentForm(forms.Form):
