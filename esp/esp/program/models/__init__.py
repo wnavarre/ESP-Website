@@ -52,7 +52,7 @@ from django.db.models.query import QuerySet
 
 from esp.cache import cache_function
 from esp.cache.key_set import wildcard
-from esp.cal.models import Event
+from esp.cal.models import Event, EventType
 from esp.customforms.linkfields import CustomFormsLinkModel
 from esp.datatree.models import *
 from esp.db.fields import AjaxForeignKey
@@ -611,6 +611,13 @@ class Program(models.Model, CustomFormsLinkModel):
     open_class_category.depend_on_model('program.ClassCategories')
     open_class_category = property(open_class_category)
 
+    def using_open_class_time_blocks(self):
+        open_class_timeblocks = self.getTimeSlots(types=[EventType.get_from_desc('Open Class Time Block')])
+        if open_class_timeblocks.exists():
+            return True
+        else:
+            return False
+
     @cache_function
     def getScheduleConstraints(self):
         return ScheduleConstraint.objects.filter(program=self).select_related()
@@ -818,12 +825,16 @@ class Program(models.Model, CustomFormsLinkModel):
         #   Filters down the floating resources to those that are not taken.
         return filter(lambda x: x.is_available(), self.getFloatingResources(timeslot))
 
-    def getDurations(self, round=False):
+    def getDurations(self, round=False, openclass=False):
         """ Find all contiguous time blocks and provide a list of duration options. """
         from esp.program.modules.module_ext import ClassRegModuleInfo
         from decimal import Decimal
-        
-        times = Event.group_contiguous(list(self.getTimeSlots()))
+
+        if openclass and self.using_open_class_time_blocks():
+            timeblocks = self.getTimeSlots(types=[EventType.get_from_desc('Open Class Time Block')])
+            times = Event.group_contiguous(list(timeblocks))
+        else:
+            times = Event.group_contiguous(list(self.getTimeSlots()))
         crmi = self.getModuleExtension(ClassRegModuleInfo)
         if crmi and crmi.class_max_duration is not None:
             max_seconds = crmi.class_max_duration * 60

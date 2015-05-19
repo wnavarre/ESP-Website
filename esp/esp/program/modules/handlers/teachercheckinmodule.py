@@ -41,7 +41,7 @@ from esp.program.models.flags import ClassFlagType
 from esp.web.util        import render_to_response
 from django.contrib.auth.decorators import login_required
 from esp.users.models    import ESPUser, Record, ContactInfo
-from esp.cal.models import Event
+from esp.cal.models import Event, EventType
 from esp.datatree.models import *
 from django              import forms
 from django.http import HttpResponse, HttpResponseRedirect
@@ -112,7 +112,7 @@ class TeacherCheckinModule(ProgramModuleObj):
         context['module'] = self
         context['form'] = form
         
-        context['time_slots'] = prog.getTimeSlots()
+        context['time_slots'] = prog.getTimeSlots(types=EventType.all_class_timeblocks())
         
         return render_to_response(self.baseDir()+'teachercheckin.html', request, context)
     

@@ -40,7 +40,7 @@ from esp.program.modules.handlers.teacherclassregmodule import TeacherClassRegMo
 from esp.program.models import ClassSubject, ClassSection, Program, ProgramCheckItem, ClassFlagType
 from esp.users.models import ESPUser, User
 from esp.datatree.models import *
-from esp.cal.models              import Event
+from esp.cal.models              import Event, EventType
 
 from esp.web.util        import render_to_response
 from esp.program.modules.forms.management import ClassManageForm, SectionManageForm, ClassCancellationForm, SectionCancellationForm
@@ -90,7 +90,7 @@ class AdminClass(ProgramModuleObj):
             resources = self.program.getFloatingResources()
             return ((x.name, x.name) for x in resources)
         if field_str == 'times':
-            return self.program.getTimeSlots().values_list('id', 'short_description')
+            return self.program.getTimeSlots(types=EventType.all_class_timeblocks()).values_list('id', 'short_description')
         if field_str == 'min_grade' or field_str == 'max_grade':
             min_grade, max_grade = (7, 12)
             if self.program.grade_min:

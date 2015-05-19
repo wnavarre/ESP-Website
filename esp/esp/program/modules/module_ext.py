@@ -40,6 +40,7 @@ from esp.datatree.models import *
 from esp.program.modules.base import ProgramModuleObj
 from esp.db.fields import AjaxForeignKey
 from django.conf import settings
+from esp.cal.models import EventType
 from esp.users.models import ESPUser
 from esp.program.models import Program, RegistrationType
 
@@ -223,6 +224,13 @@ class ClassRegModuleInfo(models.Model):
 
     # TODO: rename allowed_sections to... something and this to allowed_sections
     allowed_sections_actual = property( allowed_sections_actual_get, allowed_sections_ints_set )
+
+    def openclass_allowed_sections(self):
+        if self.allowed_sections:
+            return self.allowed_sections_ints_get()
+        else:
+            event_types = [EventType.get_from_desc("Open Class Time Block")]
+            return range(1, self.get_program().getTimeSlots(types=event_types).count() + 1)
 
     def session_counts_ints_get(self):
         return [ int(s) for s in self.session_counts.split(',') ]

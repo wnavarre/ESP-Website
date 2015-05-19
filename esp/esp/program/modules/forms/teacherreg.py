@@ -179,7 +179,7 @@ class TeacherClassRegForm(FormWithRequiredCss):
             self.fields['allow_lateness'].widget = forms.HiddenInput()
             self.fields['allow_lateness'].initial = 'False'
 
-        self.fields['duration'].choices = sorted(crmi.getDurations())
+        self.fields['duration'].choices = sorted(prog.getDurations())
         hide_choice_if_useless( self.fields['duration'] )
         
         # session_count
@@ -293,7 +293,15 @@ class TeacherOpenClassRegForm(TeacherClassRegForm):
                 field.initial = default
                 
         super(TeacherOpenClassRegForm, self).__init__(module, *args, **kwargs)
-        open_class_category = module.get_program().open_class_category
+
+        if isinstance(module, ClassRegModuleInfo):
+            crmi = module
+        else:
+            crmi = module.crmi
+
+        prog = module.get_program()
+
+        open_class_category = prog.open_class_category
         self.fields['category'].choices += [(open_class_category.id, open_class_category.category)]
 
         # Re-enable the requested special resources field as a space needs .
@@ -302,10 +310,15 @@ class TeacherOpenClassRegForm(TeacherClassRegForm):
         self.fields['requested_special_resources'].help_text = "Please describe what kind of space needs you will have for this open class (such as walls, chairs, open floor space, etc)."
 
         # Modify some help texts to be form-specific.
+        self.fields['duration'].choices = sorted(prog.getDurations(openclass=True))
         self.fields['duration'].help_text = "For how long are you willing to teach this class?"
 
+        section_numbers = crmi.openclass_allowed_sections()
+        section_numbers = zip(section_numbers, section_numbers)
+        self.fields['num_sections'].choices = section_numbers
+
         fields = [('category', open_class_category.id), 
-                  ('prereqs', ''), ('session_count', 1), ('grade_min', module.get_program().grade_min), ('grade_max', module.get_program().grade_max), 
+                  ('prereqs', ''), ('session_count', 1), ('grade_min', prog.grade_min), ('grade_max', prog.grade_max),
                   ('class_size_max', 200), ('class_size_optimal', ''), ('optimal_class_size_range', ''), 
                   ('allowable_class_size_ranges', ''), ('hardness_rating', '**'), ('allow_lateness', True), 
                   ('requested_room', '')]

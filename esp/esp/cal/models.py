@@ -54,6 +54,11 @@ class EventType(models.Model):
     get_from_desc.depend_on_model('cal.EventType')
     get_from_desc = classmethod(get_from_desc)
 
+    @classmethod
+    def all_class_timeblocks(cls):
+        return [EventType.get_from_desc('Class Time Block'),
+                EventType.get_from_desc('Open Class Time Block')]
+
 class Event(models.Model):
     """ A unit calendar entry.
 
