@@ -75,6 +75,7 @@ def ESPError(message=None, log=True):
         return cls
     else:
         return cls(message)
+
  
 """ Adapted from http://www.djangosnippets.org/snippets/802/ """
 class AjaxErrorMiddleware(object):
@@ -105,6 +106,12 @@ class AjaxErrorMiddleware(object):
 
         if isinstance(exception, AjaxErrorMiddleware.AjaxError):
             return self.bad_request(request, exception)
+
+        if isinstance(exception, JSONError):
+            response = HttpResponse(json.dumps(unicode(exception)), content_type="application/json")
+            response.status_code = 500
+            return response
+
 
         return None
     
@@ -154,14 +161,27 @@ class ESPErrorMiddleware(object):
         import sys
 
         debug = settings.DEBUG  # get the debug value
-        
         exc_info = sys.exc_info()
+
+        context = {'error': exc_info[1]}
+        context_instance = Context()
+        try:
+                # attempt to set up variables the template needs
+                # - actually, some things will fail to be set up due to our
+                #   silly render_to_response hack, but hopefully that will all
+                #   just silently fail...
+                # - alternatively, we could, I dunno, NOT GET RID OF THE SAFE
+                #   TEMPLATE in main?
+                context_instance = RequestContext(request)
+        except:
+            pass
+            
+
         if isinstance(exception, ESPError_Log) or exception == ESPError_Log:
             # Subject of the email
             subject = 'Error (%s IP): %s' % ((request.META.get('REMOTE_ADDR') in \
                                               settings.INTERNAL_IPS and 'internal' or 'EXTERNAL'), \
                                               getattr(request, 'path', ''))
-                
             try:
                 request_repr = repr(request)
             except:
@@ -178,22 +198,6 @@ class ESPErrorMiddleware(object):
             mail_admins(subject, message, fail_silently=True)
 
         elif isinstance(exception, Http403):
-            context = {'error': exc_info[1]}
-            try:
-                # attempt to set up variables the template needs
-                # - actually, some things will fail to be set up due to our
-                #   silly render_to_response hack, but hopefully that will all
-                #   just silently fail...
-                # - alternatively, we could, I dunno, NOT GET RID OF THE SAFE
-                #   TEMPLATE in main?
-                context_instance = RequestContext(request)
-            except:
-                # well, we couldn't, but at least display something
-                # (actually it will immediately fail on main because someone
-                # removed the safe version of the template and
-                # miniblog_for_user doesn't silently fail but best not to put
-                # in ugly hacks and make random variables just happen to work.)
-                context_instance = Context()
             response = render_to_response('403.html', context, context_instance=context_instance)
             response.status_code = 403
             return response
@@ -201,25 +205,10 @@ class ESPErrorMiddleware(object):
 
         if isinstance(exception, ESPError_NoLog) or exception == ESPError_NoLog \
                 or isinstance(exception, ESPError_Log) or exception == ESPError_Log: # No logging, just output
-            context = {'error': exc_info[1]}
-            try:
-                # attempt to set up variables the template needs
-                # - actually, some things will fail to be set up due to our
-                #   silly render_to_response hack, but hopefully that will all
-                #   just silently fail...
-                # - alternatively, we could, I dunno, NOT GET RID OF THE SAFE
-                #   TEMPLATE in main?
-                context_instance = RequestContext(request)
-            except:
-                # well, we couldn't, but at least display something
-                # (actually it will immediately fail on main because someone
-                # removed the safe version of the template and
-                # miniblog_for_user doesn't silently fail but best not to put
-                # in ugly hacks and make random variables just happen to work.)
-                context_instance = Context()
             response = render_to_response('error.html', context, context_instance=context_instance)  # Will use a pretty ESP error page...
             response.status_code = 500
             return response
+
         return None
 
             
@@ -227,4 +216,8 @@ class ESPErrorMiddleware(object):
         "Helper function to return the traceback as a string"
         import traceback
         return '\n'.join(traceback.format_exception(*(exc_info or sys.exc_info())))
+
+
+class JSONError(Exception):
+    pass
 

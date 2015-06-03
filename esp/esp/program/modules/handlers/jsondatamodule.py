@@ -45,7 +45,7 @@ from django.http import Http404, HttpResponse
 
 from esp.cal.models import Event
 from esp.dbmail.models import MessageRequest
-from esp.middleware import ESPError
+from esp.middleware import ESPError, AjaxError, JSONError
 from esp.program.models import Program, ClassSection, ClassSubject, StudentRegistration, ClassCategories, StudentSubjectInterest, SplashInfo, ClassFlagType
 from esp.program.modules.base import ProgramModuleObj, CoreModule, needs_student, needs_teacher, needs_admin, needs_onsite, needs_account, main_call, aux_call
 from esp.program.modules.forms.splashinfo import SplashInfoForm
@@ -428,7 +428,7 @@ class JSONDataModule(ProgramModuleObj, CoreModule):
             class_id = int(request.GET['class_id'])
             matching_classes = ClassSubject.objects.filter(id=class_id)
         else:
-            raise ESPError('Need a section or subject ID to fetch catalog info', log=False)
+            raise JSONError('Need a section or subject ID to fetch catalog info')
 
         # If we're here, we don't have a section_id, so default to classes
         if not return_key:
