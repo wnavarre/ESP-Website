@@ -1,9 +1,10 @@
 describe("ChangelogFetcher", function() {
     var c = new ChangelogFetcher(generateFakeMatrix(), new FakeApiClient(), 32);
 
- 	var changelog_entry = {
+    var changelog_entry = {
         id: 2,
         index: 2,
+        isScheduling: true,
         room_name: "room-2",
         timeslots: [ "3" ],
     };
@@ -11,6 +12,7 @@ describe("ChangelogFetcher", function() {
     var unschedule_changelog_entry = {
         timeslots: [],
         room_name: "",
+        isScheduling: true,
         id: 1,
         index: 3,
     };
